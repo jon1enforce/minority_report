@@ -32,7 +32,7 @@ Der Kern des Designs ist die **Kürzung statt Rundung**. Sie erzeugt eine Binnin
 
 Der `minority_report.v` ist ein **redundanter Entscheider**: Aus `n = 18` parallelen FP16-Eingaben (1 Bit Vorzeichen, 5 Bit Exponent, 10 Bit Mantisse) wird ein Majority-Wert bestimmt, und zusätzlich eine Minoritäts-Statistik ausgegeben.
 
-### Der Zweck des Erfinders
+### Der Zweck 
 
 1. **Ungenauigkeiten eliminieren.** Die 18 Eingaben sind redundante Messungen desselben Prozesses. Ihre individuellen Ungenauigkeiten sollen durch Majority-Bildung unterdrückt werden.
 2. **Maximalen Informationsgehalt bewahren.** Statt nur den Majority-Wert auszugeben, liefert das Tool **Metadaten**: Wie viele Abweichler gab es? Bei welcher Kürzungslänge?
@@ -299,7 +299,7 @@ Der Code garantiert **deterministischen** Output — aber nicht, dass dieser Out
 
 ## 6. Design-Intent vs. Design-Realität
 
-| Aspekt | Intent (Erfinder) | Realität (Code) |
+| Aspekt | Intent | Realität (Code) |
 |---|---|---|
 | Ungenauigkeiten eliminieren | Robust gegen Rauschen | Verlangt Einstimmigkeit in sign/exp |
 | Max. Metadaten | Minoritäts-Statistik | Betrag/Magnitude vorhanden (aggregiert), Richtung fehlt |
