@@ -333,25 +333,3 @@ Die Grenzen des Tools sind ebenso klar: Keine Richtungsinformation, keine Kanal-
 
 ---
 
-## Anhang: Was aus dem Code folgt
-
-### A.1 Untere Schranke für `P(G)`
-
-Wenn alle 18 Eingänge bit-identisch sind (`p^18 ≈ 0.8345`), gilt sicher:
-- `sign_ok = 1`
-- `exp_ok = 1`
-- `mabweich[s] = 0 ≤ 1` für alle `s`
-
-Also ist der Output deterministisch gültig:
-
-```
-P(G) ≥ 0.99^18 ≈ 0.8345
-```
-
-### A.2 Fehlerfall bei einem einzigen Vorzeichen-Abweichler
-
-Wenn genau 1 der 18 Eingänge ein abweichendes Vorzeichen hat (`sign_ones = 1` oder `17`), setzt der Code `error_sign = 1`. Der Output ist **nicht** deterministisch gültig, unabhängig von der Mantisse.
-
-### A.3 Fehlerfall bei einem einzigen Exponent-Abweichler
-
-Wenn genau 1 der 18 Eingänge einen abweichenden Exponenten hat (`exp_max = 17` oder weniger), setzt der Code `error_exp = 1`. Der Output ist **nicht** deterministisch gültig.
