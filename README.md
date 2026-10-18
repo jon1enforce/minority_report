@@ -12,7 +12,7 @@ Der `minority_report.v` ist ein FPGA-Baustein, der aus `n = 18` redundanten 16-B
 
 Im Zentrum steht die Frage nach dem **Determinismus**: Jeder der 18 Eingänge ist mit Wahrscheinlichkeit `p` vollständig bit-identisch zum wahren Wert. Der Code verlangt **Einstimmigkeit im Vorzeichen und Exponenten** sowie **höchstens einen Abweichler in der Mantisse** auf mindestens einer Kürzungsstufe. Wir zeigen, was daraus streng folgt und was nicht. Die häufig zitierte Größenordnung `10^-40` ist **kein** Ergebnis dieser Rechnung.
 
-Der Kern des Designs ist die **Kürzung statt Rundung**, die eine Binning-Struktur erzeugt und Histogramm-Analysen über Kürzungslängen und Minoritäts-Nibbles ermöglicht. Wir diskutieren die Grenzen der Zuordenbarkeit (kein `<`/`>`, keine Rangfolge, keine Kanal-Zuordnung).
+Der Kern des Designs ist die **Kürzung statt Rundung**, die eine Binning-Struktur erzeugt und Histogramm-Analysen über Kürzungslängen und Minoritäts-Nibbles ermöglicht. Die 5 Nibbles in `minority_meta` kodieren die **Abweichungs-Magnitude** relativ zur Ausgabelänge und sind absolut rekonstruierbar — ein bewusstes Feature, keine Lücke. Wir diskutieren die verbleibenden Grenzen: kein `<`/`>`, keine Rangfolge, keine Kanal-Zuordnung.
 
 ---
 
@@ -245,27 +245,7 @@ Das Tool ist eine **many-to-one-Abbildung** vom 18-Tupel-Raum (riesig) auf den `
 ΔS = k_B · ln |{ x ∈ 𝔽₁₆ⁿ : f(x) = y }|
 ```
 
----
-
-## 5. Was das Tool statistisch nicht kann
-
-### 5.1 Kein `<`/`>`-Comparator (Richtung fehlt)
-
-Die Minoritäts-Statistik zählt **wie viele** abweichen, nicht **in welche Richtung**. Konsequenzen:
-
-- Kein gerichteter Bias messbar.
-- Keine Offset-/Gain-Trennung.
-- Keine Bimodalitäts-Erkennung bei symmetrischer Streuung.
-
-### 5.2 Keine Index-Zuordnung (welcher der 18?)
-
-Die Statistik ist **aggregiert**. Man kann nicht sagen, **welcher** Eingang abweicht. Konsequenzen:
-
-- Kein „Best-Fit"-Gewinner.
-- Keine Rangfolge.
-- Keine per-Kanal-Kalibrierung.
-
-### 5.3 Abweichungs-Magnitude: 5 Stufen, relativ zur FP16-Ausgabelänge — rekonstruierbar
+### 4.6 Abweichungs-Magnitude: 5 Stufen, relativ zur FP16-Ausgabelänge — rekonstruierbar
 
 Die 5 Nibbles in `minority_meta` kodieren die Abweichlerzahl auf den **letzten fünf Kürzungsstufen bis `chosen_bl`**. Das ist kein Zufall, sondern ein bewusstes Feature: Die Magnitude-Information ist **relativ zur Ausgabelänge** kodiert und durch die im Output enthaltene Längeninformation **absolut rekonstruierbar**.
 
@@ -288,11 +268,31 @@ Die 5 Nibbles in `minority_meta` kodieren die Abweichlerzahl auf den **letzten f
 
 **Fazit:** Die Magnitude-Information ist **vorhanden, relativ zur Ausgabelänge kodiert und absolut rekonstruierbar** — aber **aggregiert** (nicht pro Kanal) und **richtungslos** (nicht `<`/`>`).
 
-### 5.4 Keine interne Zeitinformation
+---
+
+## 5. Was das Tool statistisch nicht kann
+
+### 5.1 Kein `<`/`>`-Comparator (Richtung fehlt)
+
+Die Minoritäts-Statistik zählt **wie viele** abweichen, nicht **in welche Richtung**. Konsequenzen:
+
+- Kein gerichteter Bias messbar.
+- Keine Offset-/Gain-Trennung.
+- Keine Bimodalitäts-Erkennung bei symmetrischer Streuung.
+
+### 5.2 Keine Index-Zuordnung (welcher der 18?)
+
+Die Statistik ist **aggregiert**. Man kann nicht sagen, **welcher** Eingang abweicht. Konsequenzen:
+
+- Kein „Best-Fit"-Gewinner.
+- Keine Rangfolge.
+- Keine per-Kanal-Kalibrierung.
+
+### 5.3 Keine interne Zeitinformation
 
 Das Tool liefert Ausgaben pro Taktzyklus, aber keine Zeitstempel. Zeitliche Korrelationsanalyse muss **extern** gemacht werden.
 
-### 5.5 Keine Korrektheits-Garantie (nur Determinismus)
+### 5.4 Keine Korrektheits-Garantie (nur Determinismus)
 
 Der Code garantiert **deterministischen** Output — aber nicht, dass dieser Output **korrekt** ist. Die Unterscheidung:
 
@@ -309,13 +309,14 @@ Der Code garantiert **deterministischen** Output — aber nicht, dass dieser Out
 | Aspekt | Intent (Erfinder) | Realität (Code) |
 |---|---|---|
 | Ungenauigkeiten eliminieren | Robust gegen Rauschen | Verlangt Einstimmigkeit in sign/exp |
-| Max. Metadaten | Minoritäts-Statistik | Betrag vorhanden (aggregiert), Richtung fehlt |
+| Max. Metadaten | Minoritäts-Statistik | Betrag/Magnitude vorhanden (aggregiert), Richtung fehlt |
 | Determinismus | Reproduzierbarer Output | Deterministisch, aber nicht korrekt |
 | Binning | Kürzungslängen als Bins | Funktioniert |
+| Magnitude | (nicht spezifiziert) | 5 Stufen, relativ zur Ausgabelänge, rekonstruierbar |
 | Kanal-Zuordnung | (nicht spezifiziert) | Nicht möglich |
 | Richtung | (nicht spezifiziert) | Nicht möglich |
 
-**Die zentrale Lücke.** Der Erfinder will Ungenauigkeiten eliminieren **und** maximalen Informationsgehalt bewahren. Der Code liefert das für den Fall, dass alle Eingänge bit-identisch sind (`p^18 ≈ 0.8345`), und mit Einschränkungen (Betrags-Statistik vorhanden, aber aggregiert; Richtung fehlt). Wie hoch die per-Vektor-Wahrscheinlichkeit `P(G)` genau ist, hängt von der Abweichungsverteilung ab und ist ohne diese Annahme nicht exakt berechenbar.
+**Die zentrale Lücke.** Der Erfinder will Ungenauigkeiten eliminieren **und** maximalen Informationsgehalt bewahren. Der Code liefert das für den Fall, dass alle Eingänge bit-identisch sind (`p^18 ≈ 0.8345`), und mit Einschränkungen (Magnitude vorhanden, aber aggregiert; Richtung fehlt). Wie hoch die per-Vektor-Wahrscheinlichkeit `P(G)` genau ist, hängt von der Abweichungsverteilung ab und ist ohne diese Annahme nicht exakt berechenbar.
 
 **Was das Tool nicht verspricht.** Es verspricht keine Fehlerkorrektur im informationstheoretischen Sinn, keine absolute Korrektheit, keine Kanal-Zuordnung. Es ist ein **statistischer Comparator**, kein **Fehlerkorrektur-Code**.
 
@@ -327,7 +328,7 @@ Der `minority_report.v` ist ein minimales, aber mächtiges Tool. Seine Stärke l
 
 Die zentrale Erkenntnis dieses Reports: Der Code verlangt **Einstimmigkeit im Vorzeichen und Exponenten** sowie **höchstens einen Abweichler in der Mantisse** auf mindestens einer Kürzungsstufe. Das ist **strenger** als eine 50 %-Mehrheit. Die exakte per-Vektor-Wahrscheinlichkeit `P(G)` ist ohne Annahme über die Abweichungsverteilung nicht berechenbar. Sicher gilt nur die untere Schranke `P(G) ≥ p^18 ≈ 0.8345`.
 
-Die Grenzen des Tools sind ebenso klar: Keine Richtungsinformation, keine Kanal-Zuordnung, keine per-Kanal-Magnitude, keine explizite Unsicherheits-Quantifizierung. Die Abweichungs-Magnitude ist vorhanden, aber aggregiert und relativ zur Ausgabelänge kodiert. Diese Lücken sind bewusste Design-Entscheidungen — sie machen den Code minimal und schnell, aber sie begrenzen die statistische Aussagekraft.
+Die Grenzen des Tools sind ebenso klar: Keine Richtungsinformation, keine Kanal-Zuordnung, keine per-Kanal-Magnitude, keine explizite Unsicherheits-Quantifizierung. Die Abweichungs-Magnitude ist in 5 Stufen relativ zur Ausgabelänge kodiert und absolut rekonstruierbar — ein bewusstes Feature, kein Mangel. Diese Grenzen sind bewusste Design-Entscheidungen — sie machen den Code minimal und schnell, aber sie begrenzen die statistische Aussagekraft.
 
 ---
 
