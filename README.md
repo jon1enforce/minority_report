@@ -2,7 +2,7 @@
 
 ## Eine statistisch-physikalische Analyse
 
-### Was das Tool kann, was es nicht kann, und warum es mächtiger ist als es aussieht
+### Was das Tool kann, was es nicht kann:
 
 ---
 
@@ -10,7 +10,7 @@
 
 Der `minority_report.v` ist ein FPGA-Baustein, der aus `n = 18` redundanten 16-Bit-Floating-Point-Eingaben eine Majority-Entscheidung trifft und dabei eine Minoritäts-Statistik als Metadaten ausgibt. Dieser Report analysiert das Tool unter dem Blickwinkel der statistischen Physik.
 
-Im Zentrum steht die Frage nach dem **Determinismus**: Jeder der 18 Eingänge ist mit Wahrscheinlichkeit `p` vollständig korrekt (alle FP16-Bits stimmen). Die Majority entscheidet. Wir zeigen, dass die Wahrscheinlichkeit, mit der die Majority korrekt ist, für `n = 18` und `p = 0.99` etwa **99.835 %** beträgt (strenge Majority) bzw. **99.9999 %** (mit Toleranz `τ = 1`). Die häufig zitierte Größenordnung `10^-40` ist **kein** Ergebnis dieser Rechnung, sondern entsteht nur unter anderen, unrealistischen Annahmen.
+Im Zentrum steht die Frage nach dem **Determinismus**: Jeder der 18 Eingänge ist mit Wahrscheinlichkeit `p` vollständig korrekt (alle FP16-Bits stimmen). Die Majority entscheidet. Wir zeigen, dass die Wahrscheinlichkeit, mit der die Majority korrekt ist, für `n = 18` und `p = 0.99` etwa **99.835 %** beträgt (strenge Majority) bzw. **99.9999 %** (mit Toleranz `τ = 1`). 
 
 Wir zeigen weiter, dass der Kern des Designs nicht das Majority-Voting ist, sondern die **Kürzung statt Rundung**, die eine Binning-Struktur erzeugt und Histogramm-Analysen über Kürzungslängen und Minoritäts-Nibbles ermöglicht. Wir diskutieren die Grenzen der Zuordenbarkeit (kein `<`/`>`, keine Rangfolge, keine Kanal-Zuordnung) und die Frage, ob `n = 18` für die angestrebte Zuverlässigkeit ausreicht. Ein eigenes Kapitel stellt Design-Intent und Design-Realität gegenüber.
 
@@ -46,11 +46,11 @@ Der Design-Intent lässt sich in drei Sätzen zusammenfassen:
 
 ### Die zentrale Design-Entscheidung
 
-Der wichtigste Punkt am Design ist eine scheinbar triviale Entscheidung: Die Mantisse wird **gekürzt**, nicht **gerundet**. Runden würde einen einzelnen FP16-Wert liefern — einen Punkt in der Zahlenmenge. Kürzen liefert eine **Familie** von Werten, parametrisiert durch die Bitlänge `b ∈ {1, …, 10}`. Diese Familie ist die Grundlage aller statistischen Analyse, die dieses Tool ermöglicht.
+Der wichtigste Punkt am Design ist eine scheinbar triviale Entscheidung: Die Mantisse wird **gekürzt**, nicht **gerundet**. Runden würde einen einzelnen FP16-Wert liefern — einen Punkt in der Zahlenmenge. Kürzen liefert eine **Familie** von Werten, parametrisiert durch die Bitlänge `b ∈ {1, …, 10}`. Diese Familie ist die Grundlage aller statistischen Analyse, die dieses Tool für den Ergebnisbasierten output ermöglicht. Es gibt zusätzlich Ein Metadaten output. 20 bit für Ergebnis und längeninformation/kürzungsinformation, und weitere 20 bits für den minority count, und Fehlerfälle.
 
 ### Was dieser Report nicht behandelt
 
-Der Report behandelt **keine** Accuracy-Frage im Sinne von „wie genau ist der Zahlenwert". Das Tool rundet nicht, es kürzt; der Ausgabewert ist exakt der gekürzte Majority-Wert. Die einzige relevante Frage ist, ob die Majority **korrekt** ist im Sinne von „stimmt sie mit dem wahren Wert überein". Das ist eine Frage des Determinismus, nicht der numerischen Genauigkeit.
+Der Report behandelt **keine** Accuracy-Frage im Sinne von „wie genau ist der Zahlenwert". Das Tool rundet nicht, es kürzt; der Ausgabewert ist exakt der gekürzte Majority-Wert. Die einzige relevante Frage ist, ob die Majority **korrekt** ist im Sinne von „stimmt sie mit dem wahren Wert überein". Das ist eine Frage des Determinismus, nicht der numerischen Genauigkeit. Diese Frage kann mit einer CPU gegengeprüft werden.
 
 ---
 
@@ -71,7 +71,7 @@ function [9:0] shrink_mant;
 endfunction
 ```
 
-Die Funktion kopiert nur die unteren `bl` Bits der Mantisse; alle höheren Bits werden auf null gesetzt. Das ist **kein** Runden, sondern Abschneiden. Konsequenz: Die Ausgabewerte sind in natürliche Bins sortierbar.
+Die Funktion kopiert nur die unteren `bl` Bits der Mantisse; alle höheren Bits werden auf null gesetzt. Das ist **kein** Runden, sondern Abschneiden. Konsequenz: Die Ausgabewerte sind in natürliche Bins sortierbar. Die längeninformation schneidet die Nullen ab, egal ob es Nullen oder einsen sind, in diesem Fall Nullen.
 
 **Tabelle: Prezisionsstufen als Bins**
 
@@ -102,7 +102,7 @@ for (s = 0; s < 10; s = s + 1) begin
 end
 ```
 
-Sie akzeptiert eine Majority, solange höchstens **ein** Abweichler existiert. Der erlaubte Abweichler ist das Modell eines einzelnen Sensor-Ausfalls, eines einzelnen Bit-Flips, eines einzelnen Photonen-Verlusts.
+Sie akzeptiert eine Majority, solange höchstens **ein** Abweichler existiert. Der erlaubte Abweichler ist das Modell eines einzelnen Sensor-Ausfalls/Abweichlers, eines einzelnen Bit-Flips, eines einzelnen Photonen-Verlusts.
 
 ### 2.3 Das Binning über Kürzungslängen
 
@@ -175,20 +175,6 @@ P_korrekt^(τ=1) = P(K ≥ 9) = 1 - P(K ≤ 8) ≈ 1 - 10⁻⁶ ≈ 99.9999 %
 |:---:|:---:|---:|
 | 0 (streng) | `K ≥ 10` | ≈ 99.835 % |
 | 1 | `K ≥ 9` | ≈ 99.9999 % |
-
-### 3.4 Die `10^-40`-Frage: Was ist die korrekte Größenordnung?
-
-In der Diskussion taucht gelegentlich die Größenordnung `10^-40` auf. Sie ist **kein** Ergebnis der obigen Rechnung. Für `n = 18`, `p = 0.99` ist die Bruchwahrscheinlichkeit der Majority (also `1 - P_korrekt^(τ=0)`) etwa `1.65 × 10^-3`, nicht `10^-40`.
-
-**Woher kommt `10^-40`?**
-
-Die Größenordnung `10^-40` entsteht nur unter anderen Annahmen:
-
-- Wenn `p` sehr nahe an 1 liegt (z. B. `p = 0.9999`), sinkt `P(K ≤ 9)` auf `~10^-17`; über viele Vektoren käme man in den `10^-40`-Bereich.
-- Wenn man fälschlich `p^(n·N)` statt `P(K ≥ ⌊n/2⌋ + 1)` berechnet, entstehen künstlich kleine Zahlen.
-- Wenn `n` viel größer wäre (z. B. `n = 100`), wäre `P_break` bei `p = 0.99` bereits `~10^-20`.
-
-**Fazit.** Für `n = 18`, `p = 0.99`, `τ = 0` ist die Majority mit `≈ 99.835 %` korrekt. Die Bruchwahrscheinlichkeit ist `≈ 0.165 %` pro Vektor. Das ist die korrekte Größenordnung. Die `10^-40`-Zahl ist eine Illustration für andere Parametersätze und gehört nicht in die Analyse der Design-Parameter.
 
 ### 3.5 Die Zeitredundanz-Frage
 
