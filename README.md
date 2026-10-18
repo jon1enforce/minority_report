@@ -10,9 +10,9 @@
 
 Der `minority_report.v` ist ein FPGA-Baustein, der aus `n = 18` redundanten 16-Bit-Floating-Point-Eingaben eine Majority-Entscheidung trifft und dabei eine Minoritäts-Statistik als Metadaten ausgibt. Dieser Report analysiert das Tool unter dem Blickwinkel der statistischen Physik.
 
-Im Zentrum steht die Frage nach dem **Determinismus**: Jeder der 18 Eingänge ist mit Wahrscheinlichkeit `p` vollständig bit-identisch zum wahren Wert. Der Code verlangt **Einstimmigkeit im Vorzeichen und Exponenten** sowie **höchstens einen Abweichler in der Mantisse** auf mindestens einer Kürzungsstufe. Wir zeigen, was daraus streng folgt und was nicht. Die häufig zitierte Größenordnung `10^-40` ist **kein** Ergebnis dieser Rechnung.
+Im Zentrum steht die Frage nach dem **Determinismus**: Jeder der 18 Eingänge ist mit Wahrscheinlichkeit `p` vollständig bit-identisch zum wahren Wert. Sind alle 18 bit-identisch (`p^18 ≈ 0.8345`), ist der Output mit Sicherheit korrekt. Für die restlichen Fälle verlangt der Code **Einstimmigkeit im Vorzeichen und Exponenten** sowie **höchstens einen Abweichler in der Mantisse** auf mindestens einer Kürzungsstufe. Die häufig zitierte Größenordnung `10^-40` ist **kein** Ergebnis dieser Rechnung.
 
-Der Kern des Designs ist die **Kürzung statt Rundung**, die eine Binning-Struktur erzeugt und Histogramm-Analysen über Kürzungslängen und Minoritäts-Nibbles ermöglicht. Die 5 Nibbles in `minority_meta` kodieren die **Abweichungs-Magnitude** relativ zur Ausgabelänge und sind absolut rekonstruierbar — ein bewusstes Feature, keine Lücke. Wir diskutieren die verbleibenden Grenzen: kein `<`/`>`, keine Rangfolge, keine Kanal-Zuordnung.
+Der Kern des Designs ist die **Kürzung statt Rundung**. Sie erzeugt eine Binning-Struktur und ermöglicht Histogramm-Analysen über Kürzungslängen und Minoritäts-Nibbles. Die 5 Nibbles in `minority_meta` kodieren die Abweichungs-Magnitude relativ zur Ausgabelänge und sind absolut rekonstruierbar. Die verbleibenden Grenzen: kein `<`/`>`, keine Rangfolge, keine Kanal-Zuordnung.
 
 ---
 
@@ -25,27 +25,26 @@ Der Kern des Designs ist die **Kürzung statt Rundung**, die eine Binning-Strukt
 5. [Was das Tool statistisch nicht kann](#5-was-das-tool-statistisch-nicht-kann)
 6. [Design-Intent vs. Design-Realität](#6-design-intent-vs-design-realität)
 7. [Fazit](#7-fazit)
-- [Anhang: Was aus dem Code folgt](#anhang-was-aus-dem-code-folgt)
 
 ---
 
 ## 1. Einleitung: Design-Intent
 
-Der `minority_report.v` ist kein Rechenwerk im klassischen Sinn. Er ist ein **redundanter Entscheider**: Aus `n = 18` parallelen 16-Bit-Eingaben im FP16-Format (1 Bit Vorzeichen, 5 Bit Exponent, 10 Bit Mantisse) wird ein Majority-Wert bestimmt, und zusätzlich eine Minoritäts-Statistik ausgegeben.
+Der `minority_report.v` ist ein **redundanter Entscheider**: Aus `n = 18` parallelen FP16-Eingaben (1 Bit Vorzeichen, 5 Bit Exponent, 10 Bit Mantisse) wird ein Majority-Wert bestimmt, und zusätzlich eine Minoritäts-Statistik ausgegeben.
 
 ### Der Zweck des Erfinders
 
-1. **Ungenauigkeiten eliminieren.** Die 18 Eingaben sind redundante Messungen desselben physikalischen Prozesses. Ihre individuellen Ungenauigkeiten sollen durch Majority-Bildung unterdrückt werden.
-2. **Maximalen Informationsgehalt bewahren.** Statt einfach den Majority-Wert auszugeben, soll das Tool **Metadaten** liefern: Wie viele Abweichler gab es? Bei welcher Kürzungslänge? Das sind die Informationen, die ein Physiker für Statistik braucht.
-3. **Deterministischen Output bei nicht-deterministischem Input erzeugen.** Die Eingaben sind stochastisch. Der Output soll reproduzierbar sein.
+1. **Ungenauigkeiten eliminieren.** Die 18 Eingaben sind redundante Messungen desselben Prozesses. Ihre individuellen Ungenauigkeiten sollen durch Majority-Bildung unterdrückt werden.
+2. **Maximalen Informationsgehalt bewahren.** Statt nur den Majority-Wert auszugeben, liefert das Tool **Metadaten**: Wie viele Abweichler gab es? Bei welcher Kürzungslänge?
+3. **Deterministischen Output bei nicht-deterministischem Input erzeugen.** Die Eingaben sind stochastisch, der Output soll reproduzierbar sein.
 
 ### Die zentrale Design-Entscheidung
 
-Die Mantisse wird **gekürzt**, nicht **gerundet**. Runden würde einen einzelnen FP16-Wert liefern. Kürzen liefert eine **Familie** von Werten, parametrisiert durch die Bitlänge `b ∈ {1, …, 10}`. Diese Familie ist die Grundlage aller statistischen Analyse.
+Die Mantisse wird **gekürzt**, nicht **gerundet**. Runden liefert einen einzelnen FP16-Wert. Kürzen liefert eine **Familie** von Werten, parametrisiert durch die Bitlänge `b ∈ {1, …, 10}`. Diese Familie ist die Grundlage aller statistischen Analyse.
 
 ### Was dieser Report nicht behandelt
 
-Der Report behandelt **keine** Accuracy-Frage im Sinne von „wie genau ist der Zahlenwert". Das Tool rundet nicht, es kürzt; der Ausgabewert ist exakt der gekürzte Majority-Wert. Die einzige relevante Frage ist, ob die Majority **korrekt** ist im Sinne von „stimmt sie mit dem wahren Wert überein". Das ist eine Frage des Determinismus, nicht der numerischen Genauigkeit.
+Der Report behandelt **keine** Accuracy-Frage im Sinne von „wie genau ist der Zahlenwert". Das Tool rundet nicht, es kürzt; der Ausgabewert ist exakt der gekürzte Majority-Wert. Die relevante Frage ist, ob die Majority **korrekt** ist. Das ist eine Frage des Determinismus, nicht der numerischen Genauigkeit.
 
 ---
 
@@ -85,8 +84,6 @@ Die Funktion kopiert nur die unteren `bl` Bits der Mantisse; alle höheren Bits 
 
 ### 2.2 Der Toleranz-Voter
 
-Die Auswahlschleife ist ein **Toleranz-Voter**:
-
 ```verilog
 for (s = 0; s < 10; s = s + 1) begin
     if (mabweich[s] <= 1) begin
@@ -97,11 +94,11 @@ for (s = 0; s < 10; s = s + 1) begin
 end
 ```
 
-Sie akzeptiert eine Majority, solange höchstens **ein** Abweichler auf der jeweiligen Kürzungsstufe existiert. Der erlaubte Abweichler ist das Modell eines einzelnen Sensor-Ausfalls, eines einzelnen Bit-Flips, eines einzelnen Photonen-Verlusts.
+Die Auswahlschleife akzeptiert eine Majority, solange höchstens **ein** Abweichler auf der jeweiligen Kürzungsstufe existiert. Der erlaubte Abweichler ist das Modell eines einzelnen Sensor-Ausfalls, eines einzelnen Bit-Flips, eines einzelnen Photonen-Verlusts.
 
 ### 2.3 Das Binning über Kürzungslängen
 
-Jeder Ausgabewert trägt eine gewählte Bitlänge `b̂ ∈ {1, …, 10}`. Diese Bitlänge ist eine diskrete Zustandsvariable — der natürliche Bin, über den Histogramme gebildet werden können. Die Minoritäts-Statistik (`minority_meta`, 5×4 Bit) liefert zusätzlich die Abweichlerzahl pro Kürzungsschritt.
+Jeder Ausgabewert trägt eine gewählte Bitlänge `b̂ ∈ {1, …, 10}`. Diese Bitlänge ist eine diskrete Zustandsvariable — der natürliche Bin für Histogramme. Die Minoritäts-Statistik (`minority_meta`, 5×4 Bit) liefert zusätzlich die Abweichlerzahl pro Kürzungsschritt.
 
 ---
 
@@ -115,7 +112,7 @@ Jeder Ausgabewert trägt eine gewählte Bitlänge `b̂ ∈ {1, …, 10}`. Diese 
 > **Definition 2 (Deterministischer Output).**
 > Sei `f: 𝔽₁₆ⁿ → 𝒴` die Abbildung, die der `minority_report` implementiert. Der Output heißt **deterministisch**, wenn `f(x) = f(x')` für alle `x, x'` gilt, die „hinreichend ähnlich" sind — wobei „hinreichend ähnlich" durch die Majority-Toleranz definiert ist.
 
-Das Tool ist so konstruiert, dass viele verschiedene Input-Tupel auf denselben Output abgebildet werden. Die Äquivalenzklasse ist definiert durch: gleiche Majority, gleiche Kürzungslänge, gleiche Minoritäts-Statistik.
+Viele verschiedene Input-Tupel werden auf denselben Output abgebildet. Die Äquivalenzklasse ist definiert durch: gleiche Majority, gleiche Kürzungslänge, gleiche Minoritäts-Statistik.
 
 ### 3.2 Das Modell
 
@@ -129,40 +126,34 @@ Der Output ist **deterministisch gültig** (kein `error_sign`, kein `error_exp`,
 2. **`exp_ok`:** Alle 18 Exponenten sind identisch (`exp_max == 18`).
 3. **`∃ s ∈ {1..10} : mabweich[s] ≤ 1`:** Auf mindestens einer Kürzungsstufe gibt es höchstens einen Abweichler in der Mantisse.
 
-Das ist **strenger** als eine 50 %-Mehrheit. Der Code verlangt Einstimmigkeit im Vorzeichen und Exponenten, und auf der Mantisse praktisch Einstimmigkeit (höchstens ein Ausreißer auf irgendeiner Kürzungsstufe).
+Das ist **strenger** als eine 50 %-Mehrheit: Der Code verlangt Einstimmigkeit im Vorzeichen und Exponenten und praktisch Einstimmigkeit in der Mantisse.
 
 ### 3.4 Was daraus streng folgt
 
-**Untere Schranke.** Wenn alle 18 Eingänge bit-identisch sind (Wahrscheinlichkeit `p^18 ≈ 0.8345`), dann gilt sicher:
+Sind alle 18 Eingänge bit-identisch (Wahrscheinlichkeit `p^18 ≈ 0.8345`), dann gilt sicher:
 - `sign_ok = 1`
 - `exp_ok = 1`
 - `mabweich[s] = 0 ≤ 1` für alle `s`
 
-Also ist der Output deterministisch gültig. Damit:
+In diesem Fall ist der Output **mit Sicherheit korrekt** — es gibt keine Abweichler. Daraus folgt die untere Schranke:
 
 ```
 P(G) ≥ p^18 ≈ 0.8345
 ```
 
-**Obere Schranke.** `G` erfordert `sign_ok ∧ exp_ok`. Ohne Annahme über die Position der Abweichungen ist `P(G) ≤ 1` die einzige sichere obere Schranke.
-
-**Zusammenfassung:**
-
-```
-0.8345 ≤ P(G) ≤ 1
-```
+Eine schärfere obere Schranke als `P(G) ≤ 1` ist ohne Annahme über die Position der Abweichungen nicht möglich.
 
 ### 3.5 Was daraus **nicht** folgt
 
-Die exakte per-Vektor-Wahrscheinlichkeit `P(G)` ist **ohne Annahme über die Verteilung der Abweichungen auf Vorzeichen, Exponent und Mantisse nicht berechenbar**. Insbesondere:
+Die exakte per-Vektor-Wahrscheinlichkeit `P(G)` ist ohne Annahme über die Verteilung der Abweichungen auf Vorzeichen, Exponent und Mantisse nicht berechenbar. Insbesondere sind folgende Größen **nicht** durch den Code gedeckt:
 
-- `P(G) ≈ 0.99835` (das wäre die Rechnung für `K ≥ 10`, also 50 %-Mehrheit — die implementiert der Code **nicht**).
+- `P(G) ≈ 0.99835` (das wäre `K ≥ 10`, also 50 %-Mehrheit — implementiert der Code nicht).
 - `P(G) ≈ 0.999999` (das wäre `K ≥ 9` — auch nicht).
 - `P(G) ≈ 10^-40` (das wäre eine kumulative Größe über viele Vektoren, nicht die per-Vektor-Wahrscheinlichkeit).
 
 ### 3.6 Bemerkung zur Unterscheidung „Determinismus" vs. „Accuracy"
 
-In diesem Report wird bewusst **nicht** von „Accuracy" gesprochen. „Accuracy" suggeriert eine numerische Genauigkeit des Ausgabewerts. Das ist hier nicht die relevante Frage. Das Tool **rundet nicht**, es kürzt; der Ausgabewert ist **exakt** der gekürzte Majority-Wert. Die einzige relevante Frage ist, ob die Majority **mit dem wahren Wert übereinstimmt**. Die Begriffe „Determinismus" (Output ist reproduzierbar) und „Korrektheit" (Output stimmt mit Wahrheit überein) sind die einzigen, die in diesem Report verwendet werden.
+In diesem Report wird bewusst **nicht** von „Accuracy" gesprochen. „Accuracy" suggeriert eine numerische Genauigkeit des Ausgabewerts. Das ist hier nicht die relevante Frage. Das Tool **rundet nicht**, es kürzt; der Ausgabewert ist **exakt** der gekürzte Majority-Wert. Die einzigen Begriffe, die in diesem Report verwendet werden, sind **Determinismus** (Output ist reproduzierbar) und **Korrektheit** (Output stimmt mit Wahrheit überein).
 
 ---
 
@@ -176,7 +167,7 @@ Die gewählte Bitlänge `b̂ ∈ {1, …, 10}` ist eine diskrete Observable. Man
 H(b̂) = #{ Ausgaben mit gewählter Bitlänge b̂ }
 ```
 
-über viele Vektoren aufnehmen. Dieses Histogramm zeigt, wie „sicher" die Majority-Entscheidung über die Zeit ist.
+über viele Vektoren aufnehmen. Es zeigt, wie „sicher" die Majority-Entscheidung über die Zeit ist.
 
 - **Schmales Histogramm um `b̂ = 10`:** Stabile, hochpräzise Entscheidungen.
 - **Breites Histogramm:** Fluktuation, Rauschen dominiert.
@@ -184,9 +175,7 @@ H(b̂) = #{ Ausgaben mit gewählter Bitlänge b̂ }
 
 ### 4.2 2D-Histogramm `H(b̂, m)`
 
-Jedes der 5 Nibbles in `minority_meta` kodiert die Anzahl der Abweichler bei einem Kürzungsschritt. Man kann ein 2D-Histogramm `H(b̂, m)` erstellen, wobei `m ∈ {0, …, 15}` der Nibble-Wert ist. Das zeigt, **bei welcher Präzisionsstufe** die Abweichler auftreten.
-
-**Interpretation.** Die bedingte Wahrscheinlichkeit `P(m | b̂)` zeigt, ob Abweichler gleichmäßig über die Kürzungsschritte verteilt sind oder sich bei bestimmten Stufen häufen.
+Jedes der 5 Nibbles in `minority_meta` kodiert die Anzahl der Abweichler bei einem Kürzungsschritt. Ein 2D-Histogramm `H(b̂, m)` mit `m ∈ {0, …, 15}` zeigt, **bei welcher Präzisionsstufe** die Abweichler auftreten. Die bedingte Wahrscheinlichkeit `P(m | b̂)` macht sichtbar, ob Abweichler gleichmäßig verteilt sind oder sich bei bestimmten Stufen häufen.
 
 ### 4.3 Zeitreihen-Analyse
 
@@ -237,16 +226,19 @@ B = (1/N) Σₜ (y_FPGA(t) - y_CPU(t))
 
 ### 4.5 Koarse-Graining als physikalisches Konzept
 
-Das Tool ist eine **many-to-one-Abbildung** vom 18-Tupel-Raum (riesig) auf den `(b̂, mant, meta)`-Raum (klein). Das ist genau der Begriff des **Koarse-Grainings** aus der statistischen Physik.
+Das Tool ist eine **many-to-one-Abbildung** vom 18-Tupel-Raum (riesig) auf den `(b̂, mant, meta)`-Raum (klein) — genau der Begriff des **Koarse-Grainings** aus der statistischen Physik.
 
-**Entropie-Reduktion.** Die Anzahl der Input-Tupel, die auf denselben Output abgebildet werden, bestimmt die Entropie-Reduktion:
+**Entropie-Reduktion**
 
 ```
 ΔS = k_B · ln |{ x ∈ 𝔽₁₆ⁿ : f(x) = y }|
 ```
-**4.6 Abweichungs-Magnitude: 5 Stufen, relativ zur FP16-Ausgabelänge — rekonstruierbar, minority count**
 
-Die 5 Nibbles in `minority_meta` kodieren die Abweichlerzahl auf den **letzten fünf Kürzungsstufen bis `chosen_bl`**. Das ist kein Zufall, sondern ein bewusstes Feature: Die Magnitude-Information ist **relativ zur Ausgabelänge** kodiert und durch die im Output enthaltene Längeninformation **absolut rekonstruierbar**.
+Die Anzahl der Input-Tupel, die auf denselben Output abgebildet werden, bestimmt die Vergrößerung des Zustandsraums.
+
+### 4.6 Abweichungs-Magnitude: 5 Stufen, relativ zur FP16-Ausgabelänge — rekonstruierbar
+
+Die 5 Nibbles in `minority_meta` kodieren die Abweichlerzahl auf den **letzten fünf Kürzungsstufen bis `chosen_bl`**. Das ist ein bewusstes Feature: Die Magnitude-Information ist **relativ zur Ausgabelänge** kodiert und durch die im Output enthaltene Längeninformation **absolut rekonstruierbar**.
 
 `chosen_bl` ist im Output enthalten (`majority_packed[19:16]`). Damit sind die absoluten Kürzungsstufen der 5 Nibbles eindeutig rekonstruierbar:
 
@@ -261,13 +253,15 @@ Die 5 Nibbles in `minority_meta` kodieren die Abweichlerzahl auf den **letzten f
 **Was das liefert:** Die **Position der Abweichler entlang der Kürzungsachse**, absolut rekonstruierbar. Ein Abweichler, der erst auf einer viel feineren Stufe verschwindet, erscheint in einem höheren Nibble. Das ist eine **Magnitude-Information in Bit-Einheiten**: Wie viele Kürzungsschritte mussten durchlaufen werden, bis der Abweichler „weggeschnitten" war?
 
 **Was das nicht liefert:**
-- **Keine Zuordnung zu einem konkreten Eingang.** Man sieht nicht, *welcher* der 18 Eingänge den Abweichler verursacht.
-- **Keine Richtung.** Man sieht nicht, ob der Abweichler größer oder kleiner als die Majority ist.
-- **Keine feinere Magnitude als 1 Bit.** Die Auflösung der Magnitude ist 1 Kürzungsschritt = 1 Bit.
+- **Keine Zuordnung zu einem konkreten Eingang.**
+- **Keine Richtung** (größer/kleiner als die Majority).
+- **Keine feinere Magnitude als 1 Bit.**
 
-**Fazit:** Die Magnitude-Information ist **vorhanden, relativ zur Ausgabelänge kodiert und absolut rekonstruierbar** — aber **aggregiert** (nicht pro Kanal) und **richtungslos** (nicht `<`/`>`).
+**Fazit:** Die Magnitude-Information ist **vorhanden, relativ zur Ausgabelänge kodiert und absolut rekonstruierbar** — aber **aggregiert** und **richtungslos**.
 
-**Der Minority-Count ist selbst eine statistische Größe.** Unabhängig von der Magnitude kann die Abweichlerzahl direkt statistisch ausgewertet werden — zum Beispiel als **Häufigkeitsverteilung** über viele Vektoren oder als **Zeitreihe** (wie oft gab es 0, 1, 2, … Abweichler pro Kürzungsschritt?). Das ist eine eigenständige Observable, die keine Magnitude-Interpretation benötigt.
+**Der Minority-Count ist selbst eine statistische Größe.** Unabhängig von der Magnitude kann die Abweichlerzahl direkt ausgewertet werden — als Häufigkeitsverteilung über viele Vektoren oder als Zeitreihe (wie oft gab es 0, 1, 2, … Abweichler pro Kürzungsschritt?).
+
+---
 
 ## 5. Was das Tool statistisch nicht kann
 
@@ -309,14 +303,11 @@ Der Code garantiert **deterministischen** Output — aber nicht, dass dieser Out
 |---|---|---|
 | Ungenauigkeiten eliminieren | Robust gegen Rauschen | Verlangt Einstimmigkeit in sign/exp |
 | Max. Metadaten | Minoritäts-Statistik | Betrag/Magnitude vorhanden (aggregiert), Richtung fehlt |
-| Determinismus | Reproduzierbarer Output | Deterministisch, aber nicht korrekt, weil u.a. gekürzt |
+| Determinismus | Reproduzierbarer Output | Deterministisch, aber nicht korrekt (weil u. a. gekürzt) |
 | Binning | Kürzungslängen als Bins | Funktioniert |
 | Magnitude | (nicht spezifiziert) | 5 Stufen, relativ zur Ausgabelänge, rekonstruierbar |
 | Kanal-Zuordnung | (nicht spezifiziert) | Nicht möglich |
 | Richtung | (nicht spezifiziert) | Nicht möglich |
-
-**Die zentrale Erkenntnis dieses Reports:**
-Sind alle 18 Eingänge bit-identisch (`p^18 ≈ 0.8345`), ist der Output mit Sicherheit korrekt. Für die restlichen Fälle verlangt der Code **Einstimmigkeit im Vorzeichen und Exponenten** sowie **höchstens einen Abweichler in der Mantisse** auf mindestens einer Kürzungsstufe — das ist **strenger** als eine 50 %-Mehrheit. Die exakte per-Vektor-Wahrscheinlichkeit `P(G)` für diese Restfälle ist ohne Annahme über die Abweichungsverteilung nicht berechenbar.
 
 **Was das Tool nicht verspricht.** Es verspricht keine Fehlerkorrektur im informationstheoretischen Sinn, keine absolute Korrektheit, keine Kanal-Zuordnung. Es ist ein **statistischer Comparator**, kein **Fehlerkorrektur-Code** — aber **fehlertolerant** im Sinne der Majority-Toleranz: Ein einzelner Abweichler auf der jeweiligen Kürzungsstufe wird akzeptiert, ohne die Majority zu brechen.
 
@@ -326,9 +317,8 @@ Sind alle 18 Eingänge bit-identisch (`p^18 ≈ 0.8345`), ist der Output mit Sic
 
 Der `minority_report.v` ist ein minimales, aber mächtiges Tool. Seine Stärke liegt nicht in der Präzision des Outputs, sondern in der **Struktur** des Outputs: Die Kürzung statt Rundung erzeugt eine Multiresolutions-Hierarchie, die als Binning-Grundlage für statistische Physik dient.
 
-Die zentrale Erkenntnis dieses Reports: Der Code verlangt **Einstimmigkeit im Vorzeichen und Exponenten** sowie **höchstens einen Abweichler in der Mantisse** auf mindestens einer Kürzungsstufe. Das ist **strenger** als eine 50 %-Mehrheit. Die exakte per-Vektor-Wahrscheinlichkeit `P(G)` ist ohne Annahme über die Abweichungsverteilung nicht berechenbar. Sicher gilt nur die untere Schranke `P(G) ≥ p^18 ≈ 0.8345`.
+Sind alle 18 Eingänge bit-identisch (`p^18 ≈ 0.8345`), ist der Output mit Sicherheit korrekt. Für die restlichen Fälle verlangt der Code Einstimmigkeit im Vorzeichen und Exponenten sowie höchstens einen Abweichler in der Mantisse auf mindestens einer Kürzungsstufe — strenger als eine 50 %-Mehrheit. Die exakte per-Vektor-Wahrscheinlichkeit `P(G)` für diese Restfälle ist ohne Annahme über die Abweichungsverteilung nicht berechenbar.
 
-Die Grenzen des Tools sind ebenso klar: Keine Richtungsinformation, keine Kanal-Zuordnung, keine per-Kanal-Magnitude, keine explizite Unsicherheits-Quantifizierung. Die Abweichungs-Magnitude ist in 5 Stufen relativ zur Ausgabelänge kodiert und absolut rekonstruierbar — ein bewusstes Feature, kein Mangel. Diese Grenzen sind bewusste Design-Entscheidungen — sie machen den Code minimal und schnell, aber sie begrenzen die statistische Aussagekraft.
+Die verbleibenden Grenzen sind bewusste Design-Entscheidungen: keine Richtungsinformation, keine Kanal-Zuordnung, keine per-Kanal-Magnitude, keine explizite Unsicherheits-Quantifizierung. Die Abweichungs-Magnitude ist in 5 Stufen relativ zur Ausgabelänge kodiert und absolut rekonstruierbar — ein Feature, kein Mangel.
 
 ---
-
