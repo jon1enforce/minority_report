@@ -318,7 +318,7 @@ Der Code garantiert **deterministischen** Output — aber nicht, dass dieser Out
 
 **Die zentrale Lücke.** Der Erfinder will Ungenauigkeiten eliminieren **und** maximalen Informationsgehalt bewahren. Der Code liefert das für den Fall, dass alle Eingänge bit-identisch sind (`p^18 ≈ 0.8345`), und mit Einschränkungen (Magnitude vorhanden, aber aggregiert; Richtung fehlt). Wie hoch die per-Vektor-Wahrscheinlichkeit `P(G)` genau ist, hängt von der Abweichungsverteilung ab und ist ohne diese Annahme nicht exakt berechenbar.
 
-**Was das Tool nicht verspricht.** Es verspricht keine Fehlerkorrektur im informationstheoretischen Sinn, keine absolute Korrektheit, keine Kanal-Zuordnung. Es ist ein **statistischer Comparator**, kein **Fehlerkorrektur-Code**.
+**Was das Tool nicht verspricht.** Es verspricht keine Fehlerkorrektur im informationstheoretischen Sinn, keine absolute Korrektheit, keine Kanal-Zuordnung. Es ist ein **statistischer Comparator**, kein **Fehlerkorrektur-Code** — aber **fehlertolerant** im Sinne der Majority-Toleranz: Ein einzelner Abweichler auf der jeweiligen Kürzungsstufe wird akzeptiert, ohne die Majority zu brechen.
 
 ---
 
