@@ -265,9 +265,28 @@ Die Statistik ist **aggregiert**. Man kann nicht sagen, **welcher** Eingang abwe
 - Keine Rangfolge.
 - Keine per-Kanal-Kalibrierung.
 
-### 5.3 Keine Magnitude pro Abweichler
+### 5.3 Abweichungs-Magnitude: 5 Stufen, relativ zur FP16-Ausgabelänge — rekonstruierbar
 
-Die Statistik zählt Abweichler, aber nicht **wie weit** sie abweichen. Ein Abweichler im niederwertigsten Bit und ein Abweichler im höchsten Bit werden gleich gezählt.
+Die 5 Nibbles in `minority_meta` kodieren die Abweichlerzahl auf den **letzten fünf Kürzungsstufen bis `chosen_bl`**. Das ist kein Zufall, sondern ein bewusstes Feature: Die Magnitude-Information ist **relativ zur Ausgabelänge** kodiert und durch die im Output enthaltene Längeninformation **absolut rekonstruierbar**.
+
+`chosen_bl` ist im Output enthalten (`majority_packed[19:16]`). Damit sind die absoluten Kürzungsstufen der 5 Nibbles eindeutig rekonstruierbar:
+
+| Nibble | Relative Position | Absolute Kürzungsstufe |
+|:---:|:---:|:---:|
+| 4 (oberste 4 Bit) | `chosen_bl - 0` | `chosen_bl` |
+| 3 | `chosen_bl - 1` | `chosen_bl - 1` |
+| 2 | `chosen_bl - 2` | `chosen_bl - 2` |
+| 1 | `chosen_bl - 3` | `chosen_bl - 3` |
+| 0 (unterste 4 Bit) | `chosen_bl - 4` | `chosen_bl - 4` |
+
+**Was das liefert:** Die **Position der Abweichler entlang der Kürzungsachse**, absolut rekonstruierbar. Ein Abweichler, der erst auf einer viel feineren Stufe verschwindet, erscheint in einem höheren Nibble. Das ist eine **Magnitude-Information in Bit-Einheiten**: Wie viele Kürzungsschritte mussten durchlaufen werden, bis der Abweichler „weggeschnitten" war?
+
+**Was das nicht liefert:**
+- **Keine Zuordnung zu einem konkreten Eingang.** Man sieht nicht, *welcher* der 18 Eingänge den Abweichler verursacht.
+- **Keine Richtung.** Man sieht nicht, ob der Abweichler größer oder kleiner als die Majority ist.
+- **Keine feinere Magnitude als 1 Bit.** Die Auflösung der Magnitude ist 1 Kürzungsschritt = 1 Bit.
+
+**Fazit:** Die Magnitude-Information ist **vorhanden, relativ zur Ausgabelänge kodiert und absolut rekonstruierbar** — aber **aggregiert** (nicht pro Kanal) und **richtungslos** (nicht `<`/`>`).
 
 ### 5.4 Keine interne Zeitinformation
 
@@ -290,13 +309,13 @@ Der Code garantiert **deterministischen** Output — aber nicht, dass dieser Out
 | Aspekt | Intent (Erfinder) | Realität (Code) |
 |---|---|---|
 | Ungenauigkeiten eliminieren | Robust gegen Rauschen | Verlangt Einstimmigkeit in sign/exp |
-| Max. Metadaten | Minoritäts-Statistik | Nur Betrag, nicht Richtung |
+| Max. Metadaten | Minoritäts-Statistik | Betrag vorhanden (aggregiert), Richtung fehlt |
 | Determinismus | Reproduzierbarer Output | Deterministisch, aber nicht korrekt |
 | Binning | Kürzungslängen als Bins | Funktioniert |
 | Kanal-Zuordnung | (nicht spezifiziert) | Nicht möglich |
 | Richtung | (nicht spezifiziert) | Nicht möglich |
 
-**Die zentrale Lücke.** Der Erfinder will Ungenauigkeiten eliminieren **und** maximalen Informationsgehalt bewahren. Der Code liefert das für den Fall, dass alle Eingänge bit-identisch sind (`p^18 ≈ 0.8345`), und mit Einschränkungen (nur Betrags-Statistik). Wie hoch die per-Vektor-Wahrscheinlichkeit `P(G)` genau ist, hängt von der Abweichungsverteilung ab und ist ohne diese Annahme nicht exakt berechenbar.
+**Die zentrale Lücke.** Der Erfinder will Ungenauigkeiten eliminieren **und** maximalen Informationsgehalt bewahren. Der Code liefert das für den Fall, dass alle Eingänge bit-identisch sind (`p^18 ≈ 0.8345`), und mit Einschränkungen (Betrags-Statistik vorhanden, aber aggregiert; Richtung fehlt). Wie hoch die per-Vektor-Wahrscheinlichkeit `P(G)` genau ist, hängt von der Abweichungsverteilung ab und ist ohne diese Annahme nicht exakt berechenbar.
 
 **Was das Tool nicht verspricht.** Es verspricht keine Fehlerkorrektur im informationstheoretischen Sinn, keine absolute Korrektheit, keine Kanal-Zuordnung. Es ist ein **statistischer Comparator**, kein **Fehlerkorrektur-Code**.
 
@@ -308,7 +327,7 @@ Der `minority_report.v` ist ein minimales, aber mächtiges Tool. Seine Stärke l
 
 Die zentrale Erkenntnis dieses Reports: Der Code verlangt **Einstimmigkeit im Vorzeichen und Exponenten** sowie **höchstens einen Abweichler in der Mantisse** auf mindestens einer Kürzungsstufe. Das ist **strenger** als eine 50 %-Mehrheit. Die exakte per-Vektor-Wahrscheinlichkeit `P(G)` ist ohne Annahme über die Abweichungsverteilung nicht berechenbar. Sicher gilt nur die untere Schranke `P(G) ≥ p^18 ≈ 0.8345`.
 
-Die Grenzen des Tools sind ebenso klar: Keine Richtungsinformation, keine Kanal-Zuordnung, keine Betrags-Information, keine explizite Unsicherheits-Quantifizierung. Diese Lücken sind bewusste Design-Entscheidungen — sie machen den Code minimal und schnell, aber sie begrenzen die statistische Aussagekraft.
+Die Grenzen des Tools sind ebenso klar: Keine Richtungsinformation, keine Kanal-Zuordnung, keine per-Kanal-Magnitude, keine explizite Unsicherheits-Quantifizierung. Die Abweichungs-Magnitude ist vorhanden, aber aggregiert und relativ zur Ausgabelänge kodiert. Diese Lücken sind bewusste Design-Entscheidungen — sie machen den Code minimal und schnell, aber sie begrenzen die statistische Aussagekraft.
 
 ---
 
