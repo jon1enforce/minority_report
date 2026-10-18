@@ -299,7 +299,7 @@ Der Code garantiert **deterministischen** Output — aber nicht, dass dieser Out
 | Begriff | Bedeutung | Vom Code garantiert? |
 |---|---|:---:|
 | Determinismus | Gleicher Input → gleicher Output | Ja |
-| Korrektheit | Output = „wahrer" Wert | Nein |
+| Korrektheit | Output = „wahrer" Wert | Möglich, muss mit CPU verifiziert werden |
 | Zuverlässigkeit | Stabilität über Zeit | Möglich, muss mit CPU verifiziert werden |
 
 ---
