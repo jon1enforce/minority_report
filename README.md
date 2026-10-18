@@ -244,7 +244,7 @@ Das Tool ist eine **many-to-one-Abbildung** vom 18-Tupel-Raum (riesig) auf den `
 ```
 ΔS = k_B · ln |{ x ∈ 𝔽₁₆ⁿ : f(x) = y }|
 ```
-4.6 Abweichungs-Magnitude: 5 Stufen, relativ zur FP16-Ausgabelänge — rekonstruierbar
+**4.6 Abweichungs-Magnitude: 5 Stufen, relativ zur FP16-Ausgabelänge — rekonstruierbar, minority count**
 
 Die 5 Nibbles in `minority_meta` kodieren die Abweichlerzahl auf den **letzten fünf Kürzungsstufen bis `chosen_bl`**. Das ist kein Zufall, sondern ein bewusstes Feature: Die Magnitude-Information ist **relativ zur Ausgabelänge** kodiert und durch die im Output enthaltene Längeninformation **absolut rekonstruierbar**.
 
