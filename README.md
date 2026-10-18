@@ -310,7 +310,7 @@ Der Code garantiert **deterministischen** Output — aber nicht, dass dieser Out
 |---|---|---|
 | Ungenauigkeiten eliminieren | Robust gegen Rauschen | Verlangt Einstimmigkeit in sign/exp |
 | Max. Metadaten | Minoritäts-Statistik | Betrag/Magnitude vorhanden (aggregiert), Richtung fehlt |
-| Determinismus | Reproduzierbarer Output | Deterministisch, aber nicht korrekt |
+| Determinismus | Reproduzierbarer Output | Deterministisch, aber nicht korrekt, weil u.a. gekürzt |
 | Binning | Kürzungslängen als Bins | Funktioniert |
 | Magnitude | (nicht spezifiziert) | 5 Stufen, relativ zur Ausgabelänge, rekonstruierbar |
 | Kanal-Zuordnung | (nicht spezifiziert) | Nicht möglich |
