@@ -300,7 +300,7 @@ Der Code garantiert **deterministischen** Output — aber nicht, dass dieser Out
 |---|---|:---:|
 | Determinismus | Gleicher Input → gleicher Output | Ja |
 | Korrektheit | Output = „wahrer" Wert | Nein |
-| Zuverlässigkeit | Stabilität über Zeit | Nein |
+| Zuverlässigkeit | Stabilität über Zeit | Nein, muss mit CPU verifiziert werden |
 
 ---
 
