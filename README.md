@@ -8,7 +8,7 @@
 
 ## Abstract
 
-Der `minority_report.v` ist ein FPGA-Baustein, der aus `n = 18` redundanten 16-Bit-Floating-Point-Eingaben eine Majority-Entscheidung trifft und dabei eine Minoritäts-Statistik als Metadaten ausgibt. Dieser Report analysiert das Tool unter dem Blickwinkel der statistischen Physik.
+Der `minority_report.v` ist ein FPGA-Baustein, der aus `n = 18` redundanten 16-Bit-Floating-Point-Eingaben eine Majority-Entscheidung trifft und dabei eine Minoritäts-Statistik als Metadaten ausgibt. 
 
 Im Zentrum steht die Frage nach dem **Determinismus**: Jeder der 18 Eingänge ist mit Wahrscheinlichkeit `p` vollständig bit-identisch zum wahren Wert. Sind alle 18 bit-identisch (`p^18 ≈ 0.8345`), ist der Output mit Sicherheit korrekt. Für die restlichen Fälle verlangt der Code **Einstimmigkeit im Vorzeichen und Exponenten** sowie **höchstens einen Abweichler in der Mantisse** auf mindestens einer Kürzungsstufe.
 
