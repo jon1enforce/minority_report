@@ -12,7 +12,9 @@ Der `minority_report.v` ist ein FPGA-Baustein, der aus `n = 18` redundanten 16-B
 
 Im Zentrum steht die Frage nach dem **Determinismus**: Jeder der 18 Eingänge ist mit Wahrscheinlichkeit `p` vollständig bit-identisch zum wahren Wert. Sind alle 18 bit-identisch (`p^18 ≈ 0.8345`), ist der Output mit Sicherheit korrekt. Für die restlichen Fälle verlangt der Code **Einstimmigkeit im Vorzeichen und Exponenten** sowie **höchstens einen Abweichler in der Mantisse** auf mindestens einer Kürzungsstufe.
 
-Der Kern des Designs ist die **Kürzung statt Rundung**. Sie erzeugt eine Binning-Struktur(wieviel wurde diskret-gekürzt) und ermöglicht Histogramm-Analysen über Kürzungslängen und Minoritäts-Nibbles. Die 5 Nibbles in `minority_meta` kodieren die Abweichungs-Magnitude relativ zur Ausgabelänge und sind absolut rekonstruierbar. Die verbleibenden Grenzen: kein `<`/`>`, keine Rangfolge, keine Kanal-Zuordnung.
+Der Kern des Designs ist die **Kürzung statt Rundung**. Sie erzeugt eine Binning-Struktur(wieviel wurde diskret-gekürzt) und ermöglicht Histogramm-Analysen über Kürzungslängen und Minoritäts-Nibbles. Die 5 Nibbles in `minority_meta` kodieren die Abweichungs-Magnitude relativ zur Ausgabelänge und sind absolut rekonstruierbar. Das kürzen garantiert den Determinismus im output.
+
+Die verbleibenden Grenzen: kein `<`/`>`, keine Rangfolge, keine Kanal-Zuordnung.
 
 ---
 
