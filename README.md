@@ -15,7 +15,7 @@ Im Zentrum steht die Frage nach dem **Determinismus**: Jeder der 18 Eingänge is
 Der Kern des Designs ist die **Kürzung statt Rundung**. Sie erzeugt eine Binning-Struktur(wieviel wurde diskret-gekürzt) und ermöglicht Histogramm-Analysen über Kürzungslängen und Minoritäts-Nibbles. Die 5 Nibbles in `minority_meta` kodieren die Abweichungs-Magnitude relativ zur Ausgabelänge und sind absolut rekonstruierbar. Vorausgesetzt, die beiden Ausgabe-lines sind synchronisiert(kein Problem). Das kürzen garantiert den Determinismus im output zu "prakisch" nahezu 100%. Bzw. mit 10⁻34 -> untere Schranke, nicht, weil mindestens 17 der 18 Kanäle übereinstimmen müssen, nach unserem Modell.
 
 Zum Vergleich:
-10^36 ist ungefähr so wahrscheinlich wie "ein und die selbe Person 4-mal hintereinander den Jackpot bei Lotto 6aus49 zu knacken".
+10^34 ist ungefähr so wahrscheinlich wie "ein und die selbe Person 4-mal hintereinander den Jackpot bei Lotto 6aus49 zu knacken".
 
 
 Die verbleibenden Grenzen: kein `<`/`>`, keine Rangfolge, keine Kanal-Zuordnung.
