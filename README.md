@@ -16,7 +16,7 @@ Der Kern des Designs ist die **Kürzung statt Rundung**. Sie erzeugt eine Binnin
 
 Zum Vergleich:
 10^34 ist ungefähr so wahrscheinlich wie "ein und die selbe Person 4-mal direkt-hintereinander den Jackpot bei Lotto 6aus49 zu knacken".
-Es passiert praktisch alle 368 Trilliarden Jahre.
+Es passiert rechnerisch alle 368 Trilliarden Jahre.
 
 
 Die verbleibenden Grenzen: kein `<`/`>`, keine Rangfolge, keine Kanal-Zuordnung.
