@@ -12,7 +12,11 @@ Der `minority_report.v` ist ein FPGA-Baustein, der aus `n = 18` redundanten 16-B
 
 Im Zentrum steht die Frage nach dem **Determinismus**: Jeder der 18 Eingänge ist mit Wahrscheinlichkeit `p=` (in unserem Beispielsmodell ist p=0.99) vollständig bit-identisch zum wahren Wert. Sind alle 18 bit-identisch (`p^18 ≈ 0.8345`), ist der Output mit Sicherheit korrekt;(10^(-36) ist praktisch irrelevant,nach heutigen Maßstäben). Für die restlichen Fälle verlangt der Code **Einstimmigkeit im Vorzeichen und Exponenten** sowie **höchstens einen Abweichler in der Mantisse** auf mindestens einer Kürzungsstufe.
 
-Der Kern des Designs ist die **Kürzung statt Rundung**. Sie erzeugt eine Binning-Struktur(wieviel wurde diskret-gekürzt) und ermöglicht Histogramm-Analysen über Kürzungslängen und Minoritäts-Nibbles. Die 5 Nibbles in `minority_meta` kodieren die Abweichungs-Magnitude relativ zur Ausgabelänge und sind absolut rekonstruierbar. Vorausgesetzt, die beiden Ausgabe-lines sind synchronisiert(kein Problem). Das kürzen garantiert den Determinismus im output zu "prakisch" nahezu 100%. 
+Der Kern des Designs ist die **Kürzung statt Rundung**. Sie erzeugt eine Binning-Struktur(wieviel wurde diskret-gekürzt) und ermöglicht Histogramm-Analysen über Kürzungslängen und Minoritäts-Nibbles. Die 5 Nibbles in `minority_meta` kodieren die Abweichungs-Magnitude relativ zur Ausgabelänge und sind absolut rekonstruierbar. Vorausgesetzt, die beiden Ausgabe-lines sind synchronisiert(kein Problem). Das kürzen garantiert den Determinismus im output zu "prakisch" nahezu 100%. Bzw. mit 10⁻34 -> untere Schranke, nicht, weil mindestens 17 der 18 Kanäle übereinstimmen müssen, nach unserem Modell.
+
+Zum Vergleich:
+10^36 ist ungefähr so wahrscheinlich wie "ein und die selbe Person 4-mal hintereinander den Jackpot bei Lotto 6aus49 zu knacken".
+
 
 Die verbleibenden Grenzen: kein `<`/`>`, keine Rangfolge, keine Kanal-Zuordnung.
 
