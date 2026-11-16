@@ -21,7 +21,7 @@ Zum Vergleich:
 Es passiert rechnerisch alle 368 Trilliarden Jahre.
 
 Die Stellgröße ist n, und muss je nach p - angepasst werden. z.b. für p<0.98 empfehle ich n>18.
-Für p=0.99 ist n=18 mehr als ausreichend, nach heutigen Maßstäben.
+Für p=0.99 ist n=18 mehr als ausreichend - um den Determinismus zu garantieren, nach heutigen Maßstäben.
 
 
 Die verbleibenden Grenzen: kein `<`/`>`, keine Rangfolge, keine Kanal-Zuordnung.
