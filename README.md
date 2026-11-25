@@ -155,18 +155,6 @@ P(G) ≥ p^18 ≈ 0.8345
 
 Eine schärfere obere Schranke als `P(G) ≤ 1` ist ohne Annahme über die Position der Abweichungen nicht möglich.
 
-### 3.5 Was daraus **nicht** folgt
-
-Die exakte per-Vektor-Wahrscheinlichkeit `P(G)` ist ohne Annahme über die Verteilung der Abweichungen auf Vorzeichen, Exponent und Mantisse nicht berechenbar. Insbesondere sind folgende Größen **nicht** durch den Code gedeckt:
-
-- `P(G) ≈ 0.99835` (das wäre `K ≥ 10`, also 50 %-Mehrheit — implementiert der Code nicht).
-- `P(G) ≈ 0.999999` (das wäre `K ≥ 9` — auch nicht).
-- `P(G) ≈ 10^-40` (das wäre eine kumulative Größe über viele Vektoren, nicht die per-Vektor-Wahrscheinlichkeit).
-
-### 3.6 Bemerkung zur Unterscheidung „Determinismus" vs. „Accuracy"
-
-In diesem Report wird bewusst **nicht** von „Accuracy" gesprochen. „Accuracy" suggeriert eine numerische Genauigkeit des Ausgabewerts. Das ist hier nicht die relevante Frage. Das Tool **rundet nicht**, es kürzt; der Ausgabewert ist **exakt** der gekürzte Majority-Wert. Die einzigen Begriffe, die in diesem Report verwendet werden, sind **Determinismus** (Output ist reproduzierbar) und **Korrektheit** (Output stimmt mit Wahrheit überein).
-
 ---
 
 ## 4. Was das Tool statistisch kann
@@ -323,8 +311,13 @@ Der Code garantiert **deterministischen** Output — aber nicht, dass dieser Out
 
 **Was das Tool nicht verspricht.** Es verspricht keine Fehlerkorrektur im informationstheoretischen Sinn, keine absolute Korrektheit, keine Kanal-Zuordnung. Es ist ein **statistischer Comparator**, kein **Fehlerkorrektur-Code** — aber **fehlertolerant** im Sinne der Majority-Toleranz: Ein einzelner Abweichler auf der jeweiligen Kürzungsstufe wird akzeptiert, ohne die Majority zu brechen.
 
----
 
+## TODO (Report, Abschnitt „Repräsentationsräume"):
+    These: Floating Point ist für Majority-Vergleiche strukturell nachteilig, weil die Mantisse exponentiell skaliert ist: Ein Unterschied von 1 in der Mantisse bedeutet je nach Exponent einen numerischen Unterschied von 2^(exp−10). Die Bit-Hierarchie ist dadurch nicht monoton im numerischen Wert – zwei Werte können auf niedrigen Kürzungsstufen übereinstimmen, obwohl sie numerisch weit auseinanderliegen (und umgekehrt).
+    Beispiel: 1023 (0111111111₂ bei exp=2^9) und 1025 (0000000001₂ bei exp=2^10) sind numerisch 2 Einheiten entfernt, aber die Mantissen sind komplementär; das Niederbit-Schema kürzt bis bl=1.
+    Alternative: Fixed-Point eliminiert die Skalierung – jedes Bit hat denselben numerischen Wert, die Hierarchie ist monoton, die Kürzungslänge ist ein direktes Maß für numerische Übereinstimmung.
+    Trade-off: Eingeschränkter Dynamikbereich (Q11.5: ±1024; FP16: 65504). Fixed-Point nur praktikabel bei bekanntem, beschränktem Wertebereich.
+    Formulierung: Nicht „FP16 ist unpraktikabel", sondern „FP16 ist für Majority-Vergleiche strukturell nachteilig; Fixed-Point ist für bekannte Wertebereiche die überlegene Wahl". → Design-Entscheidung, keine Fehlerbehebung.
 ## 7. Fazit
 
 Der `minority_report.v` ist ein minimales, aber mächtiges Tool. Seine Stärke liegt nicht in der Präzision des Outputs, sondern in der **Struktur** des Outputs: Die Kürzung statt Rundung erzeugt eine Multiresolutions-Hierarchie, die als Binning-Grundlage für statistische Physik dient.
