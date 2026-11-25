@@ -28,8 +28,8 @@ Die verbleibenden Grenzen: kein `<`/`>`, keine Rangfolge, keine Kanal-Zuordnung.
 
 **TODO**  
 **floating-point ist in diesem Kontext strukturell Nachteilig, gegenüber fixed-point!** 
-# technologische konvergenz 
-# anpassung an das System 
+(technologische konvergenz, 
+anpassung an das System) 
 
 
 ---
