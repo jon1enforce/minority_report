@@ -27,7 +27,10 @@ Für p=0.99 ist n=18 mehr als ausreichend - um den Determinismus zu garantieren,
 Die verbleibenden Grenzen: kein `<`/`>`, keine Rangfolge, keine Kanal-Zuordnung.
 
 **TODO**  
-**floating-point ist in diesem Kontext strukturell Nachteilig, gegenüber fixed-point!**
+**floating-point ist in diesem Kontext strukturell Nachteilig, gegenüber fixed-point!** 
+# technologische konvergenz 
+# anpassung an das System 
+
 
 ---
 
