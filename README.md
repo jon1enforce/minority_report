@@ -312,12 +312,17 @@ Der Code garantiert **deterministischen** Output — aber nicht, dass dieser Out
 **Was das Tool nicht verspricht.** Es verspricht keine Fehlerkorrektur im informationstheoretischen Sinn, keine absolute Korrektheit, keine Kanal-Zuordnung. Es ist ein **statistischer Comparator**, kein **Fehlerkorrektur-Code** — aber **fehlertolerant** im Sinne der Majority-Toleranz: Ein einzelner Abweichler auf der jeweiligen Kürzungsstufe wird akzeptiert, ohne die Majority zu brechen.
 
 
-## TODO (Report, Abschnitt „Repräsentationsräume"):
-    These: Floating Point ist für Majority-Vergleiche strukturell nachteilig, weil die Mantisse exponentiell skaliert ist: Ein Unterschied von 1 in der Mantisse bedeutet je nach Exponent einen numerischen Unterschied von 2^(exp−10). Die Bit-Hierarchie ist dadurch nicht monoton im numerischen Wert – zwei Werte können auf niedrigen Kürzungsstufen übereinstimmen, obwohl sie numerisch weit auseinanderliegen (und umgekehrt).
-    Beispiel: 1023 (0111111111₂ bei exp=2^9) und 1025 (0000000001₂ bei exp=2^10) sind numerisch 2 Einheiten entfernt, aber die Mantissen sind komplementär; das Niederbit-Schema kürzt bis bl=1.
-    Alternative: Fixed-Point eliminiert die Skalierung – jedes Bit hat denselben numerischen Wert, die Hierarchie ist monoton, die Kürzungslänge ist ein direktes Maß für numerische Übereinstimmung.
-    Trade-off: Eingeschränkter Dynamikbereich (Q11.5: ±1024; FP16: 65504). Fixed-Point nur praktikabel bei bekanntem, beschränktem Wertebereich.
-    Formulierung: Nicht „FP16 ist unpraktikabel", sondern „FP16 ist für Majority-Vergleiche strukturell nachteilig; Fixed-Point ist für bekannte Wertebereiche die überlegene Wahl". → Design-Entscheidung, keine Fehlerbehebung.
+## TODO (Repräsentationsräume)
+These: Floating Point ist für Majority-Vergleiche strukturell nachteilig, 
+weil die Mantisse exponentiell skaliert ist: Ein Unterschied von 1 in der Mantisse bedeutet je nach Exponent einen numerischen Unterschied von 2^(exp−10). 
+Die Bit-Hierarchie ist dadurch nicht monoton im numerischen Wert – zwei Werte können auf niedrigen Kürzungsstufen übereinstimmen, obwohl sie numerisch weit  auseinanderliegen (und umgekehrt). 
+Beispiel: 1023 (0111111111₂ bei exp=2^9) und 1025 (0000000001₂ bei exp=2^10) sind numerisch 2 Einheiten entfernt, aber die Mantissen sind komplementär; 
+das Niederbit-Schema kürzt bis bl=1. 
+    Alternative: Fixed-Point eliminiert die Skalierung – jedes Bit hat denselben numerischen Wert, 
+    die Hierarchie ist monoton, die Kürzungslänge ist ein direktes Maß für numerische Übereinstimmung. 
+    Trade-off: Eingeschränkter Dynamikbereich (Q11.5: ±1024; FP16: 65504). Fixed-Point nur praktikabel bei bekanntem, beschränktem Wertebereich. 
+    Formulierung: Nicht „FP16 ist unpraktikabel", sondern „FP16 ist für Majority-Vergleiche strukturell nachteilig; 
+    Fixed-Point ist für bekannte Wertebereiche die überlegene Wahl". → Design-Entscheidung, keine Fehlerbehebung. 
 ## 7. Fazit
 
 Der `minority_report.v` ist ein minimales, aber mächtiges Tool. Seine Stärke liegt nicht in der Präzision des Outputs, sondern in der **Struktur** des Outputs: Die Kürzung statt Rundung erzeugt eine Multiresolutions-Hierarchie, die als Binning-Grundlage für statistische Physik dient.
